@@ -8,19 +8,13 @@ namespace NewTask
     {
         static void Main(string[] args)
         {
-            var queue = "task_queue";
+            var exchange = "logs";
             var factory = new ConnectionFactory() { HostName = "localhost" };
 
             using (var conn = factory.CreateConnection())
             using (var channel = conn.CreateModel())
             {
-                channel.QueueDeclare(
-                    queue: queue,
-                    durable: true,
-                    exclusive: false,
-                    autoDelete: false,
-                    arguments: null
-                );
+                channel.ExchangeDeclare(exchange, "fanout");
 
                 string message = GetMessage(args);
                 var body = Encoding.UTF8.GetBytes(message);
@@ -28,7 +22,14 @@ namespace NewTask
                 var properties = channel.CreateBasicProperties();
                 properties.Persistent = true;
 
-                channel.BasicPublish(exchange: "", routingKey: queue, basicProperties: properties, body: body);
+                channel.BasicPublish(
+                    exchange: exchange,
+                    routingKey: "",
+                    basicProperties: properties,
+                    body: body
+                );
+                
+                Console.WriteLine(" [x] Sent {0}", message);
             }
 
             Console.WriteLine("Press [enter] to exit");
